@@ -149,8 +149,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.add, color: Colors.white),
                     onPressed: () {
-                      debugPrint('Navigating to /courses/all');
-                      context.go('/courses/all');
+                      debugPrint('Navigating to /approval-status');
+                      context.go('/approval-status');
                     },
                     padding: const EdgeInsets.only(top: 15, right: 10),
                   ),

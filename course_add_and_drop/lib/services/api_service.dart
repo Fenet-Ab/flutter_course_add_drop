@@ -83,6 +83,9 @@ class ApiService {
         final decoded = _decodeJwt(token);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', token);
+        await prefs.setString('user_role', decoded['role'] as String);
+        debugPrint('API Service: JWT token saved: $token');
+        debugPrint('API Service: User role saved: ${decoded['role'] as String}');
         return {
           'token': token,
           'role': decoded['role'] as String?,
@@ -259,14 +262,14 @@ class ApiService {
         body: jsonEncode({'add_id': addId}),
       );
 
-      debugPrint('Drop course response: ${response.statusCode} ${response.body}');
+      debugPrint('Drop course request response: ${response.statusCode} ${response.body}');
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
       } else {
-        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to drop course: ${response.statusCode}');
+        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to request drop course: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Drop course error: $e');
+      debugPrint('Drop course request error: $e');
       throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
@@ -439,6 +442,91 @@ class ApiService {
       }
     } catch (e) {
       debugPrint('Update course error: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getDropRequests() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) {
+        throw Exception('No token found');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/drops'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Get drop requests response: ${response.statusCode} ${response.body}');
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      } else {
+        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to fetch drop requests: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Get drop requests error: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateDropRequest(String requestId, String status) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) {
+        throw Exception('No token found');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/drops/$requestId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'approval_status': status}),
+      );
+
+      debugPrint('Update drop request response: ${response.statusCode} ${response.body}');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to update drop request: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Update drop request error: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateAddRequest(String requestId, String status) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) {
+        throw Exception('No token found');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/adds/$requestId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'approval_status': status}),
+      );
+
+      debugPrint('Update add request response: ${response.statusCode} ${response.body}');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to update add request: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Update add request error: $e');
       throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }

@@ -12,6 +12,7 @@ import './presentation/screen/add_course_screen.dart';
 import './presentation/screen/select_academic_year_screen.dart';
 import './presentation/screen/drop_course_screen.dart';
 import './presentation/screen/admin_dashboard_screen.dart';
+import './presentation/screen/approval_status_screen.dart';
 
 // void main() {
 //   runApp(const ProviderScope(child: MyApp()));
@@ -115,6 +116,10 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/drop-course',
           builder: (context, state) => const DropCourseScreen(),
+        ),
+        GoRoute(
+          path: '/approval-status',
+          builder: (context, state) => const ApprovalStatusScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(

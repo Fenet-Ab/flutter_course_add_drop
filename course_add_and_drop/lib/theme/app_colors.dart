@@ -12,4 +12,5 @@ class AppColors {
   static const Color colorBorder = Color(0xFFDDDDDD);
   static const Color colorDivider = Color(0xFFEEEEEE);
   static const Color colorShadow = Color(0x1A000000);
+  static const Color colorGray = Colors.grey;
 } 
