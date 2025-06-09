@@ -343,21 +343,18 @@ class ApiService {
         // Call backend logout endpoint
         final response = await http.get(
           Uri.parse('$baseUrl/logout'),
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
+          headers: _getHeaders(token: token),
         );
         debugPrint('Backend logout response: ${response.statusCode} ${response.body}');
+
+        if (response.statusCode == 200) {
+          debugPrint('Logged out successfully - local tokens and user data cleared.');
+          await prefs.clear();
+        } else {
+          debugPrint('Logout failed with status ${response.statusCode}: ${response.body}');
+          throw Exception('Failed to logout');
+        }
       }
-      
-      // Clear all locally stored user and auth data
-      await prefs.remove('jwt_token');
-      await prefs.remove('user_role');
-      await prefs.remove('user_full_name'); // Clear full name
-      await prefs.remove('user_username'); // Clear username
-      await prefs.remove('user_email');     // Clear email
-      await prefs.remove('user_profile_photo'); // Clear profile photo path
-      debugPrint('Logged out successfully - local tokens and user data cleared.');
     } catch (e) {
       debugPrint('Logout error: $e');
     }
@@ -632,75 +629,64 @@ class ApiService {
     XFile? profilePhotoXFile,
     String? newPassword,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token');
-    debugPrint('Update Profile: Token retrieved from prefs: $token');
-    if (token == null) {
-      debugPrint('Update Profile Error: No token found in SharedPreferences.');
-      throw Exception('No token found');
-    }
-    debugPrint('Update Profile: Using token: $token');
-
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      
+      if (token == null) {
+        throw Exception('No token found');
+      }
+
+      debugPrint('Updating profile with token: $token');
+      
+      // Create multipart request
       final request = http.MultipartRequest(
         'PUT',
         Uri.parse('$baseUrl/auth/profile'),
       );
 
-      // Add headers
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
+      // Add authorization header
+      request.headers['Authorization'] = 'Bearer $token';
 
       // Add text fields
-      request.fields['fullName'] = fullName;
+      request.fields['full_name'] = fullName;
       request.fields['username'] = username;
       request.fields['email'] = email;
       if (newPassword != null && newPassword.isNotEmpty) {
-        request.fields['password'] = newPassword; // Send new password
+        request.fields['password'] = newPassword;
       }
 
       // Add profile photo if provided
       if (profilePhotoXFile != null) {
-        if (kIsWeb) {
-          final bytes = await profilePhotoXFile.readAsBytes();
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'profilePhoto',
-              bytes,
-              filename: profilePhotoXFile.name,
-            ),
-          );
-        } else {
-          // For non-web, use File.fromPath
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'profilePhoto',
-              profilePhotoXFile.path,
-            ),
-          );
-        }
+        final bytes = await profilePhotoXFile.readAsBytes();
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'profile_photo',
+            bytes,
+            filename: profilePhotoXFile.name,
+          ),
+        );
       }
 
+      // Send request
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      debugPrint('Profile update response status: ${response.statusCode}');
+      debugPrint('Profile update response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        // Update local storage with new user data
-        await prefs.setString('user_full_name', fullName);
-        await prefs.setString('user_username', username);
-        await prefs.setString('user_email', email);
-        // If a new photo was uploaded, update the stored URL
-        if (responseData.containsKey('profile_photo')) {
-          await prefs.setString('user_profile_photo', responseData['profile_photo']);
-        }
         return responseData;
+      } else if (response.statusCode == 401) {
+        throw Exception('Session expired');
       } else {
-        throw Exception(response.body);
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to update profile');
       }
     } catch (e) {
-      throw Exception('Failed to update profile: $e');
+      debugPrint('Error updating profile: $e');
+      rethrow;
     }
   }
 
@@ -717,5 +703,11 @@ class ApiService {
       debugPrint('JWT decode error: $e');
       throw Exception('Failed to decode token');
     }
+  }
+
+  Map<String, String> _getHeaders({required String token}) {
+    return {
+      'Authorization': 'Bearer $token',
+    };
   }
 }

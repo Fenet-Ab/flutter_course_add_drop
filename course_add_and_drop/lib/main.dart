@@ -15,6 +15,9 @@ import './presentation/screen/drop_course_screen.dart';
 import './presentation/screen/approval_status_screen.dart';
 import './presentation/screen/edit_account_screen.dart';
 
+// Global ValueNotifier for authentication status
+final ValueNotifier<bool> authNotifier = ValueNotifier<bool>(false);
+
 // void main() {
 //   runApp(const ProviderScope(child: MyApp()));
 // }
@@ -65,7 +68,6 @@ import './presentation/screen/edit_account_screen.dart';
 //   }
 // }
 
-
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -79,7 +81,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final GoRouter _router;
-  final ValueNotifier<bool> _authNotifier = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -87,7 +88,7 @@ class _MyAppState extends State<MyApp> {
     _checkAuthStatus();
 
     _router = GoRouter(
-      refreshListenable: _authNotifier,
+      refreshListenable: authNotifier,
       initialLocation: '/loading',
       routes: [
         GoRoute(
@@ -214,17 +215,16 @@ class _MyAppState extends State<MyApp> {
     debugPrint('Checking auth status - Token: ${token != null}, Role: $role');
     
     if (token != null && role != null) {
-      _authNotifier.value = true;
+      authNotifier.value = true;
       debugPrint('Auth status: Logged in as $role');
     } else {
-      _authNotifier.value = false;
+      authNotifier.value = false;
       debugPrint('Auth status: Not logged in');
     }
   }
 
   @override
   void dispose() {
-    _authNotifier.dispose();
     super.dispose();
   }
 

@@ -5,6 +5,7 @@ import '../components/button_component.dart';
 import 'package:flutter/foundation.dart';
 import '../../components/add_drop_component.dart' as add_drop_components; // Import custom components
 import '../components/button_component.dart' as button; // Import the aliased ButtonComponent
+import 'package:course_add_and_drop/main.dart'; // Import main.dart to access global authNotifier
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -95,10 +96,24 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Future<void> _logout() async {
-    await _apiService.logout();
-    if (!mounted) return;
-    debugPrint('Navigating to /login');
-    context.go('/login');
+    try {
+      await _apiService.logout();
+      // Explicitly update global auth status to false
+      authNotifier.value = false; // Use the global authNotifier
+      if (!mounted) return;
+      debugPrint('Navigating to /login after logout');
+      context.go('/login');
+    } catch (e) {
+      debugPrint('Logout error: $e');
+      // Even if API logout fails, clear local data and attempt to navigate
+      authNotifier.value = false; // Use the global authNotifier
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: ${e.toString().replaceFirst('Exception: ', '')}. Please try again.')),
+      );
+      debugPrint('Navigating to /login after logout error');
+      context.go('/login');
+    }
   }
 
   @override
@@ -127,7 +142,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       GestureDetector(
                         onTap: () {
                           debugPrint('Navigating to /edit-account');
-                          context.go('/edit-account');
+                          context.push('/edit-account');
                         },
                         child: CircleAvatar(
                           radius: 50,

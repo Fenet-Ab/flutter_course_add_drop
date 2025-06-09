@@ -40,6 +40,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    debugPrint('Loading user profile...');
     try {
       setState(() {
         _isLoading = true;
@@ -47,15 +48,18 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       });
 
       final user = await _apiService.getUserProfile();
+      debugPrint('User profile fetched: ${user.toJson()}');
       if (!mounted) return;
       setState(() {
         _fullNameController.text = user.fullName;
         _usernameController.text = user.username;
         _emailController.text = user.email;
-        _profilePhotoUrl = user.profilePhoto; // Set the URL for display
+        _profilePhotoUrl = user.profilePhoto;
         _isLoading = false;
+        debugPrint('Profile controllers updated: Full Name: ${user.fullName}, Username: ${user.username}, Email: ${user.email}');
       });
     } catch (e) {
+      debugPrint('Error loading user profile: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -69,8 +73,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
-          _pickedProfileXFile = pickedFile; // Store the picked XFile
-          _profilePhotoUrl = null; // Clear URL if a new image is picked
+          _pickedProfileXFile = pickedFile;
+          _profilePhotoUrl = null;
+          debugPrint('Profile photo picked: ${pickedFile.name}');
         });
       }
     } catch (e) {
@@ -80,6 +85,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
   Future<void> _saveAccount() async {
     if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all required fields and correct errors.')),
+      );
       return;
     }
 
@@ -88,6 +96,9 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       setState(() {
         _errorMessage = 'Passwords do not match';
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match.')),
+      );
       return;
     }
 
@@ -98,11 +109,12 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     });
 
     try {
+      debugPrint('Attempting to save account...');
       await _apiService.updateProfile(
         fullName: _fullNameController.text,
         username: _usernameController.text,
         email: _emailController.text,
-        profilePhotoXFile: _pickedProfileXFile, // Pass the picked XFile
+        profilePhotoXFile: _pickedProfileXFile,
         newPassword: _passwordController.text.isNotEmpty ? _passwordController.text : null,
       );
 
@@ -112,17 +124,26 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
         _isLoading = false;
         _passwordController.clear();
         _confirmPasswordController.clear();
+        debugPrint('Profile updated successfully, clearing password fields.');
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
+        const SnackBar(content: Text('Profile updated successfully!')), // More visible confirmation
       );
+
+      // Re-fetch profile after successful update to ensure latest data is displayed
+      await _loadUserProfile();
+
     } catch (e) {
+      debugPrint('Error saving account: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
         _isLoading = false;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update profile: $_errorMessage')),
+      );
       // If session expired, redirect to login
       if (e.toString().contains('Session expired')) {
         _logout();
