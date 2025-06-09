@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../services/api_service.dart';
 import '../../components/button_component.dart' as button;
 import '../../components/clickable_login.dart' as login;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,24 +36,46 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      debugPrint('Attempting login with username: ${_usernameController.text}');
       final response = await _apiService.login(
         _usernameController.text,
         _passwordController.text,
       );
+      
       if (!mounted) return;
+      
       final role = response['role'] as String?;
-      debugPrint('Login successful, role: $role');
+      final username = response['username'] as String?;
+      debugPrint('Login successful, role: $role, username: $username');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login successful!')),
-      );
+      // Get SharedPreferences instance and verify data
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      final savedRole = prefs.getString('user_role');
+      
+      debugPrint('Stored token: $token');
+      debugPrint('Stored role: $savedRole');
 
-      if (role == 'Registrar') {
+      if (token == null || savedRole == null) {
+        throw Exception('Failed to save login credentials');
+      }
+
+      // Wait for token to be saved and persisted
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return;
+
+      // Navigate based on role
+      if (savedRole == 'Registrar') {
         debugPrint('Navigating to /dashboard/admin');
+        if (!mounted) return;
         context.go('/dashboard/admin');
-      } else {
+      } else if (savedRole == 'Student') {
         debugPrint('Navigating to /dashboard/user');
+        if (!mounted) return;
         context.go('/dashboard/user');
+      } else {
+        throw Exception('Invalid user role: $savedRole');
       }
     } catch (e) {
       if (!mounted) return;
@@ -113,20 +136,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         validator: (value) => value!.isEmpty ? 'Enter password' : null,
                       ),
                       const SizedBox(height: 15),
-                  Align(
-  alignment: Alignment.centerLeft,
-  child: TextButton(
-    onPressed: () {
-      debugPrint('Navigating to /forgot-password');
-      context.go('/forgot-password');
-    },
-    child: const Text(
-      'Forgot Password?',
-      style: TextStyle(color: Color(0xFF3B82F6)),
-    ),
-  ),
-),
-
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () {
+                            debugPrint('Navigating to /forgot-password');
+                            context.go('/forgot-password');
+                          },
+                          child: const Text(
+                            'Forgot Password?',
+                            style: TextStyle(color: Color(0xFF3B82F6)),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 40),
                       button.ButtonComponent(
                         value: _isLoading ? 'Logging In...' : 'Log In',

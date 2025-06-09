@@ -27,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
   final _fullNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _emailController = TextEditingController();
   final ApiService _apiService = ApiService();
@@ -89,16 +90,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
     try {
+      debugPrint('Creating user with username: ${_usernameController.text}');
       final user = User(
         id: int.parse(_idController.text),
-        username: _fullNameController.text,
+        username: _usernameController.text,
         password: _passwordController.text,
         email: _emailController.text,
         fullName: _fullNameController.text,
         role: 'Student', // Default, adjusted by backend
       );
 
-      await _apiService.signUp(user, _profilePhoto);
+      final response = await _apiService.signUp(user, _profilePhoto);
+      debugPrint('Signup response: $response');
+      
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registration successful!')),
@@ -139,6 +143,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   onChanged: (value) {},
                 ),
                 text_field.TextFieldComponent(
+                  controller: _emailController,
+                  label: 'Enter your email',
+                  assetPath: 'assets/email.png',
+                  validator: (value) => value!.isEmpty ? 'Enter email' : null,
+                  onChanged: (value) {},
+                ),
+                text_field.TextFieldComponent(
+                  controller: _usernameController,
+                  label: 'Enter your username',
+                  assetPath: 'assets/profile.png',
+                  validator: (value) => value!.isEmpty ? 'Enter username' : null,
+                  onChanged: (value) {},
+                ),
+                text_field.TextFieldComponent(
                   controller: _idController,
                   label: 'Your ID',
                   assetPath: 'assets/id_image.png',
@@ -156,13 +174,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                   ),
-                text_field.TextFieldComponent(
-                  controller: _emailController,
-                  label: 'Enter your email',
-                  assetPath: 'assets/email.png',
-                  validator: (value) => value!.isEmpty ? 'Enter email' : null,
-                  onChanged: (value) {},
-                ),
                 add_drop_components.PasswordTextFieldComponent(
                   controller: _passwordController,
                   label: 'Enter your password',
@@ -251,6 +262,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void dispose() {
     _idController.dispose();
     _fullNameController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _emailController.dispose();
     super.dispose();

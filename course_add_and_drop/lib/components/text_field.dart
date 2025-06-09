@@ -3,50 +3,62 @@ import 'package:flutter/material.dart';
 class TextFieldComponent extends StatelessWidget {
   final TextEditingController controller;
   final String label;
-  final String assetPath; // Changed from IconData to String for asset path
-  final String? Function(String?)? validator;
+  final String assetPath;
+  final bool readOnly;
   final TextInputType? keyboardType;
   final Function(String)? onChanged;
-  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
 
   const TextFieldComponent({
     super.key,
     required this.controller,
     required this.label,
     required this.assetPath,
-    this.validator,
+    this.readOnly = false,
     this.keyboardType,
     this.onChanged,
-    this.suffixIcon,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 8.0),
       child: TextFormField(
         controller: controller,
+        readOnly: readOnly,
+        keyboardType: keyboardType,
         onChanged: onChanged,
+        validator: validator,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.grey),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Image.asset(assetPath, width: 24, height: 24),
+          prefixIcon: Image.asset(
+            assetPath,
+            width: 20,
+            height: 20,
           ),
-          suffixIcon: suffixIcon,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.grey),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF3B82F6)),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
           filled: true,
           fillColor: Colors.white,
-          focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF3B82F6)),
-          ),
-          enabledBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
-          ),
         ),
-        keyboardType: keyboardType,
-        textInputAction: TextInputAction.next,
-        validator: validator,
       ),
     );
   }

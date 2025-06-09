@@ -238,24 +238,26 @@ class TextFieldAdminFinalComponent extends StatelessWidget {
 }
 
 class PasswordTextFieldComponent extends StatefulWidget {
-  final TextEditingController? controller;
+  final TextEditingController controller;
   final String label;
   final String assetPath;
   final bool isVisible;
   final VoidCallback onVisibilityToggle;
+  final Function(String)? onValueChange;
   final String? Function(String?)? validator;
-  final ValueChanged<String>? onValueChange;
+  final bool readOnly;
 
   const PasswordTextFieldComponent({
-    Key? key,
-    this.controller,
+    super.key,
+    required this.controller,
     required this.label,
     required this.assetPath,
     required this.isVisible,
     required this.onVisibilityToggle,
-    this.validator,
     this.onValueChange,
-  }) : super(key: key);
+    this.validator,
+    this.readOnly = false,
+  });
 
   @override
   _PasswordTextFieldComponentState createState() => _PasswordTextFieldComponentState();
@@ -268,28 +270,34 @@ class _PasswordTextFieldComponentState extends State<PasswordTextFieldComponent>
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
       child: TextFormField(
         controller: widget.controller,
+        onChanged: widget.onValueChange,
         obscureText: !widget.isVisible,
+        readOnly: widget.readOnly,
         decoration: InputDecoration(
           labelText: widget.label,
           labelStyle: const TextStyle(color: Colors.grey),
-          prefixIcon: Image.asset(widget.assetPath, width: 24, height: 24),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset(widget.assetPath, width: 24, height: 24),
+          ),
           suffixIcon: IconButton(
-            icon: Icon(widget.isVisible ? Icons.visibility : Icons.visibility_off),
+            icon: Icon(
+              widget.isVisible ? Icons.visibility : Icons.visibility_off,
+              color: Colors.grey,
+            ),
             onPressed: widget.onVisibilityToggle,
           ),
+          filled: true,
+          fillColor: Colors.white,
           focusedBorder: const OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue),
+            borderSide: BorderSide(color: Color(0xFF3B82F6)),
           ),
           enabledBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white),
           ),
-          filled: true,
-          fillColor: Colors.white,
         ),
-        validator: widget.validator,
-        onChanged: widget.onValueChange,
         textInputAction: TextInputAction.next,
-        maxLines: 1,
+        validator: widget.validator,
       ),
     );
   }

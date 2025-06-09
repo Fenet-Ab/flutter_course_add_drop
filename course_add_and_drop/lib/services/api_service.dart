@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/model/user.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -79,16 +80,46 @@ class ApiService {
       debugPrint('Login response: ${response.statusCode} ${response.body}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        debugPrint('Full login response data: $data');
+        
         final token = data['token'] as String;
         final decoded = _decodeJwt(token);
+        final role = decoded['role'] as String?;
+        
+        if (role == null) {
+          throw Exception('Invalid token: role not found');
+        }
+
         final prefs = await SharedPreferences.getInstance();
+        
+        // Clear any existing data first
+        await prefs.clear();
+        
+        // Save new data with commit
         await prefs.setString('jwt_token', token);
-        await prefs.setString('user_role', decoded['role'] as String);
-        debugPrint('API Service: JWT token saved: $token');
-        debugPrint('API Service: User role saved: ${decoded['role'] as String}');
+        await prefs.setString('user_role', role);
+        await prefs.setString('user_username', username);
+        await prefs.commit(); // Force commit changes
+        
+        // Verify the data was saved
+        final savedToken = prefs.getString('jwt_token');
+        final savedRole = prefs.getString('user_role');
+        
+        if (savedToken == null || savedRole == null) {
+          throw Exception('Failed to save login credentials');
+        }
+        
+        debugPrint('API Service: Token saved: $savedToken');
+        debugPrint('API Service: Role saved: $savedRole');
+        debugPrint('API Service: Username saved: $username');
+
+        // Ensure data is persisted
+        await Future.delayed(const Duration(milliseconds: 500));
+
         return {
           'token': token,
-          'role': decoded['role'] as String?,
+          'role': role,
+          'username': username,
         };
       } else {
         throw Exception(jsonDecode(response.body)['error'] ?? 'Login failed: ${response.statusCode}');
@@ -278,24 +309,24 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
+      
       if (token == null) {
         throw Exception('No token found');
       }
 
       final response = await http.put(
-        Uri.parse('$baseUrl/adds/$addId'),
+        Uri.parse('$baseUrl/admin/add/' + addId.toString() + '/status'),
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
         },
-        body: jsonEncode({'approval_status': status}),
+        body: jsonEncode({'status': status}),
       );
 
-      debugPrint('Approve add response: ${response.statusCode} ${response.body}');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to update add: ${response.statusCode}');
+        throw Exception(jsonDecode(response.body)['error'] ?? 'Failed to approve add');
       }
     } catch (e) {
       debugPrint('Approve add error: $e');
@@ -304,33 +335,96 @@ class ApiService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    debugPrint('Token cleared on logout');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      if (token != null) {
+        // Call backend logout endpoint
+        final response = await http.get(
+          Uri.parse('$baseUrl/logout'),
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        );
+        debugPrint('Backend logout response: ${response.statusCode} ${response.body}');
+      }
+      
+      // Clear all locally stored user and auth data
+      await prefs.remove('jwt_token');
+      await prefs.remove('user_role');
+      await prefs.remove('user_full_name'); // Clear full name
+      await prefs.remove('user_username'); // Clear username
+      await prefs.remove('user_email');     // Clear email
+      await prefs.remove('user_profile_photo'); // Clear profile photo path
+      debugPrint('Logged out successfully - local tokens and user data cleared.');
+    } catch (e) {
+      debugPrint('Logout error: $e');
+    }
   }
 
   Future<User> getUserProfile() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
+      
       if (token == null) {
         throw Exception('No token found');
       }
 
-      final decoded = _decodeJwt(token);
-      debugPrint('Decoded token: $decoded');
-      
-      return User(
-        id: int.parse(decoded['id']?.toString() ?? '0'),
-        username: decoded['username']?.toString() ?? '',
-        fullName: decoded['fullName']?.toString() ?? decoded['username']?.toString() ?? '',
-        email: decoded['email']?.toString() ?? '',
-        role: decoded['role']?.toString() ?? 'Student',
-        password: '', // Password not stored in token
+      debugPrint('Making profile request with token: $token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
+
+      debugPrint('Get user profile response: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return User.fromJson(data);
+      } else if (response.statusCode == 401) {
+        // Instead of clearing token, return basic user info from token
+        debugPrint('Received 401 from /profile API. Using token data instead.');
+        final decoded = _decodeJwt(token);
+        debugPrint('Decoded token data (error case): $decoded');
+        
+        // Create a basic user object from token data
+        final user = User(
+          id: decoded['id'] as int,
+          username: prefs.getString('user_username') ?? '',
+          password: '',
+          email: '',
+          fullName: '',
+          role: decoded['role'] as String,
+          profilePhoto: null,
+        );
+        debugPrint('Created user object from token (error case): ${user.toJson()}');
+        return user;
+      } else {
+        throw Exception('Failed to get user profile: ${response.statusCode}');
+      }
     } catch (e) {
       debugPrint('Get user profile error: $e');
-      throw Exception(e.toString().replaceFirst('Exception: ', ''));
+      // Instead of throwing, return basic user info from token
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token != null) {
+        final decoded = _decodeJwt(token);
+        return User(
+          id: decoded['id'] as int,
+          username: prefs.getString('user_username') ?? '',
+          password: '',
+          email: '',
+          fullName: '',
+          role: decoded['role'] as String,
+          profilePhoto: null,
+        );
+      }
+      throw Exception('Session expired. Please log in again.');
     }
   }
 
@@ -528,6 +622,85 @@ class ApiService {
     } catch (e) {
       debugPrint('Update add request error: $e');
       throw Exception(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<Map<String, dynamic>> updateProfile({
+    required String fullName,
+    required String username,
+    required String email,
+    XFile? profilePhotoXFile,
+    String? newPassword,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    debugPrint('Update Profile: Token retrieved from prefs: $token');
+    if (token == null) {
+      debugPrint('Update Profile Error: No token found in SharedPreferences.');
+      throw Exception('No token found');
+    }
+    debugPrint('Update Profile: Using token: $token');
+
+    try {
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/auth/profile'),
+      );
+
+      // Add headers
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+
+      // Add text fields
+      request.fields['fullName'] = fullName;
+      request.fields['username'] = username;
+      request.fields['email'] = email;
+      if (newPassword != null && newPassword.isNotEmpty) {
+        request.fields['password'] = newPassword; // Send new password
+      }
+
+      // Add profile photo if provided
+      if (profilePhotoXFile != null) {
+        if (kIsWeb) {
+          final bytes = await profilePhotoXFile.readAsBytes();
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'profilePhoto',
+              bytes,
+              filename: profilePhotoXFile.name,
+            ),
+          );
+        } else {
+          // For non-web, use File.fromPath
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'profilePhoto',
+              profilePhotoXFile.path,
+            ),
+          );
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        // Update local storage with new user data
+        await prefs.setString('user_full_name', fullName);
+        await prefs.setString('user_username', username);
+        await prefs.setString('user_email', email);
+        // If a new photo was uploaded, update the stored URL
+        if (responseData.containsKey('profile_photo')) {
+          await prefs.setString('user_profile_photo', responseData['profile_photo']);
+        }
+        return responseData;
+      } else {
+        throw Exception(response.body);
+      }
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
     }
   }
 
