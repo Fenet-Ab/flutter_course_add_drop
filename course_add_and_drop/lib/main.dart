@@ -85,7 +85,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
+    // Use addPostFrameCallback to ensure _checkAuthStatus runs after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthStatus();
+    });
 
     _router = GoRouter(
       refreshListenable: authNotifier,
@@ -145,10 +148,14 @@ class _MyAppState extends State<MyApp> {
         ),
       ],
       redirect: (context, state) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('jwt_token');
-        final role = prefs.getString('user_role');
-        final loggedIn = token != null && role != null;
+        final loggedIn = authNotifier.value; // From global notifier
+        String? role; // Initialize role as nullable
+
+        // Only fetch role from SharedPreferences if considered logged in by authNotifier
+        if (loggedIn) {
+          final prefs = await SharedPreferences.getInstance();
+          role = prefs.getString('user_role');
+        }
 
         final targetPath = state.uri.toString();
         final isAuthPage = [
@@ -159,34 +166,45 @@ class _MyAppState extends State<MyApp> {
         ].contains(targetPath);
 
         debugPrint('GoRouter Redirect: Current Path: $targetPath');
-        debugPrint('GoRouter Redirect: Logged In: $loggedIn, Role: $role');
+        debugPrint('GoRouter Redirect: Logged In (from Notifier): $loggedIn, Role: $role');
 
-        // If not logged in and trying to access a protected page
-        if (!loggedIn && !isAuthPage && targetPath != '/loading') {
-          debugPrint('GoRouter Redirect: Not logged in, redirecting to /login');
-          return '/login';
+        // === CRITICAL REDIRECT LOGIC REFINEMENT ===
+
+        // Scenario 1: User is NOT logged in
+        if (!loggedIn) {
+          // If trying to access a protected page (anything not auth or loading), redirect to login
+          if (!isAuthPage && targetPath != '/loading') {
+            debugPrint('GoRouter Redirect: Not logged in and accessing protected page, redirecting to /login');
+            return '/login';
+          }
+          // If trying to access /loading when not logged in, redirect to login
+          if (targetPath == '/loading') {
+            debugPrint('GoRouter Redirect: Not logged in and on /loading, redirecting to /login');
+            return '/login';
+          }
+          // If not logged in but trying to access an auth page, allow it.
+          debugPrint('GoRouter Redirect: Not logged in, allowing access to auth page: $targetPath');
+          return null; // Allow navigation to auth pages
         }
 
-        // If logged in and trying to access an auth page (login/signup etc.)
-        if (loggedIn && isAuthPage) {
+        // Scenario 2: User IS logged in (loggedIn is true at this point)
+
+        // If logged in and trying to access an auth page (login/signup etc.), redirect to home dashboard
+        if (isAuthPage) {
           String homeRoute = (role == 'Registrar') ? '/dashboard/admin' : '/dashboard/user';
-          debugPrint('GoRouter Redirect: Logged in, redirecting from auth page to $homeRoute');
+          debugPrint('GoRouter Redirect: Logged in and accessing auth page, redirecting to $homeRoute');
           return homeRoute;
         }
 
-        // If trying to access /loading after auth status is known
-        if (loggedIn && targetPath == '/loading') {
+        // If logged in and on /loading, redirect to home dashboard
+        if (targetPath == '/loading') {
           String homeRoute = (role == 'Registrar') ? '/dashboard/admin' : '/dashboard/user';
-          debugPrint('GoRouter Redirect: Logged in, redirecting from /loading to $homeRoute');
+          debugPrint('GoRouter Redirect: Logged in and on /loading, redirecting to $homeRoute');
           return homeRoute;
         }
-        if (!loggedIn && targetPath == '/loading') {
-          debugPrint('GoRouter Redirect: Not logged in, redirecting from /loading to /login');
-          return '/login';
-        }
 
-        // For dashboard routes, verify the role matches
-        if (loggedIn && targetPath.startsWith('/dashboard/')) {
+        // For dashboard routes, verify the role matches (only if loggedIn is true)
+        if (targetPath.startsWith('/dashboard/')) {
           final isAdminRoute = targetPath == '/dashboard/admin';
           final isAdminRole = role == 'Registrar';
           
@@ -197,8 +215,8 @@ class _MyAppState extends State<MyApp> {
           }
         }
 
-        // No redirect needed, proceed to the target path
-        debugPrint('GoRouter Redirect: No redirect needed, proceeding to $targetPath');
+        // No redirect needed, proceed to the target path (if it's a protected route and role matches, or another valid route)
+        debugPrint('GoRouter Redirect: Logged in, no redirect needed, proceeding to $targetPath');
         return null;
       },
       errorBuilder: (context, state) => Scaffold(
@@ -225,6 +243,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    // Only dispose if this MyApp is the owner of the ValueNotifier
+    // Since it's global, it generally shouldn't be disposed here unless the entire app shuts down
+    // authNotifier.dispose(); // Removed as it's global
     super.dispose();
   }
 

@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../components/button_component.dart' as button;
 import '../../components/clickable_login.dart' as login;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:course_add_and_drop/main.dart'; // Import main.dart to access global authNotifier
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,6 +63,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Wait for token to be saved and persisted
       await Future.delayed(const Duration(milliseconds: 500));
+
+      // Set global auth status to true after successful login
+      authNotifier.value = true;
+      debugPrint('authNotifier set to true after successful login.');
 
       if (!mounted) return;
 

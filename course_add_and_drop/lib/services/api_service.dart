@@ -6,6 +6,7 @@ import '../../data/model/user.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
+import 'package:course_add_and_drop/main.dart'; // Import main.dart to access global authNotifier
 
 class ApiService {
   static String get baseUrl {
@@ -335,28 +336,37 @@ class ApiService {
   }
 
   Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Always attempt to clear local data immediately
+    debugPrint('Attempting to clear local SharedPreferences on logout.');
+    await prefs.clear();
+    authNotifier.value = false; // Immediately update global auth state
+    debugPrint('authNotifier set to false during logout.');
+
     try {
-      final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('jwt_token');
+      if (token == null) {
+        debugPrint('No token found for backend logout, but local data cleared.');
+        return; // No token, no need to call backend
+      }
 
-      if (token != null) {
-        // Call backend logout endpoint
-        final response = await http.get(
-          Uri.parse('$baseUrl/logout'),
-          headers: _getHeaders(token: token),
-        );
-        debugPrint('Backend logout response: ${response.statusCode} ${response.body}');
+      debugPrint('Calling backend logout endpoint: $baseUrl/logout with token: $token');
+      final response = await http.get(
+        Uri.parse('$baseUrl/logout'),
+        headers: _getHeaders(token: token),
+      );
 
-        if (response.statusCode == 200) {
-          debugPrint('Logged out successfully - local tokens and user data cleared.');
-          await prefs.clear();
-        } else {
-          debugPrint('Logout failed with status ${response.statusCode}: ${response.body}');
-          throw Exception('Failed to logout');
-        }
+      debugPrint('Backend logout response: ${response.statusCode} ${response.body}');
+
+      if (response.statusCode == 200) {
+        debugPrint('Backend logout successful.');
+      } else {
+        debugPrint('Backend logout failed with status ${response.statusCode}: ${response.body}');
+        // Still allow the frontend to proceed as logged out locally
       }
     } catch (e) {
-      debugPrint('Logout error: $e');
+      debugPrint('Error during backend logout call: $e');
+      // Frontend still proceeds as logged out locally
     }
   }
 

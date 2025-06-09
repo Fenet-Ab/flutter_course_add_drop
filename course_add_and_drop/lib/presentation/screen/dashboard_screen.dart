@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../../components/add_drop_component.dart' as add_drop_components; // Import custom components
 import '../components/button_component.dart' as button; // Import the aliased ButtonComponent
 import 'package:course_add_and_drop/main.dart'; // Import main.dart to access global authNotifier
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -96,24 +97,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   }
 
   Future<void> _logout() async {
-    try {
-      await _apiService.logout();
-      // Explicitly update global auth status to false
-      authNotifier.value = false; // Use the global authNotifier
-      if (!mounted) return;
-      debugPrint('Navigating to /login after logout');
+    // Immediately set authNotifier to false to trigger GoRouter redirect
+    authNotifier.value = false;
+    debugPrint('Auth status set to false via authNotifier in dashboard_screen.dart.');
+
+    // Temporarily removed _apiService.logout() call to isolate redirect issue.
+    // Once redirect works, we will reintroduce a robust logout for the backend.
+
+    // Ensure navigation to login happens on the next frame after state update.
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('Navigating to /login via addPostFrameCallback after authNotifier update.');
       context.go('/login');
-    } catch (e) {
-      debugPrint('Logout error: $e');
-      // Even if API logout fails, clear local data and attempt to navigate
-      authNotifier.value = false; // Use the global authNotifier
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout failed: ${e.toString().replaceFirst('Exception: ', '')}. Please try again.')),
-      );
-      debugPrint('Navigating to /login after logout error');
-      context.go('/login');
-    }
+    });
   }
 
   @override
