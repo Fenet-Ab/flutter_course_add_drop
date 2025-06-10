@@ -109,8 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  debugPrint('Navigating to /signup');
-                  context.go('/signup');
+                  debugPrint('Navigating to /home');
+                  context.go('/home');
                 },
               ),
             ),

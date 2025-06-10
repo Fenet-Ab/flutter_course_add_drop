@@ -4,12 +4,14 @@ class ButtonComponent extends StatelessWidget {
   final String value;
   final VoidCallback onClick;
   final bool isEnabled;
+  final Color? backgroundColor;
 
   const ButtonComponent({
     super.key,
     required this.value,
     required this.onClick,
     this.isEnabled = true,
+    this.backgroundColor,
   });
 
   @override
@@ -20,7 +22,7 @@ class ButtonComponent extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isEnabled ? onClick : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: backgroundColor ?? const Color(0xFF3B82F6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(

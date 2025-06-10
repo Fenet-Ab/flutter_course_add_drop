@@ -14,6 +14,7 @@ import './presentation/screen/select_academic_year_screen.dart';
 import './presentation/screen/drop_course_screen.dart';
 import './presentation/screen/approval_status_screen.dart';
 import './presentation/screen/edit_account_screen.dart';
+import './presentation/screen/home_screen.dart';
 
 // Global ValueNotifier for authentication status
 final ValueNotifier<bool> authNotifier = ValueNotifier<bool>(false);
@@ -92,8 +93,12 @@ class _MyAppState extends State<MyApp> {
 
     _router = GoRouter(
       refreshListenable: authNotifier,
-      initialLocation: '/loading',
+      initialLocation: '/home',
       routes: [
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomeScreen(),
+        ),
         GoRoute(
           path: '/loading',
           builder: (context, state) => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -163,6 +168,7 @@ class _MyAppState extends State<MyApp> {
           '/signup',
           '/forgot-password',
           '/terms',
+          '/home',
         ].contains(targetPath);
 
         debugPrint('GoRouter Redirect: Current Path: $targetPath');
@@ -172,24 +178,24 @@ class _MyAppState extends State<MyApp> {
 
         // Scenario 1: User is NOT logged in
         if (!loggedIn) {
-          // If trying to access a protected page (anything not auth or loading), redirect to login
+          // If trying to access a protected page (anything not auth or loading), redirect to home
           if (!isAuthPage && targetPath != '/loading') {
-            debugPrint('GoRouter Redirect: Not logged in and accessing protected page, redirecting to /login');
-            return '/login';
+            debugPrint('GoRouter Redirect: Not logged in and accessing protected page, redirecting to /home');
+            return '/home';
           }
-          // If trying to access /loading when not logged in, redirect to login
+          // If trying to access /loading when not logged in, redirect to home
           if (targetPath == '/loading') {
-            debugPrint('GoRouter Redirect: Not logged in and on /loading, redirecting to /login');
-            return '/login';
+            debugPrint('GoRouter Redirect: Not logged in and on /loading, redirecting to /home');
+            return '/home';
           }
-          // If not logged in but trying to access an auth page, allow it.
+          // If not logged in but trying to access an auth page (including home), allow it.
           debugPrint('GoRouter Redirect: Not logged in, allowing access to auth page: $targetPath');
           return null; // Allow navigation to auth pages
         }
 
         // Scenario 2: User IS logged in (loggedIn is true at this point)
 
-        // If logged in and trying to access an auth page (login/signup etc.), redirect to home dashboard
+        // If logged in and trying to access an auth page (login/signup/home etc.), redirect to home dashboard
         if (isAuthPage) {
           String homeRoute = (role == 'Registrar') ? '/dashboard/admin' : '/dashboard/user';
           debugPrint('GoRouter Redirect: Logged in and accessing auth page, redirecting to $homeRoute');

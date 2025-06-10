@@ -157,6 +157,72 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     context.go('/login');
   }
 
+  Future<void> _deleteAccount() async {
+    final bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Account Deletion'),
+          content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // User cancels
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // User confirms
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ?? false; // Default to false if dialog is dismissed
+
+    if (!confirmDelete) {
+      return; // User cancelled deletion
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      debugPrint('Attempting to delete account...');
+      final response = await _apiService.deleteProfile();
+
+      if (!mounted) return;
+      setState(() {
+        _successMessage = response['message'] ?? 'Account deleted successfully';
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_successMessage!)),
+      );
+
+      debugPrint('Account deleted successfully, navigating to /login');
+      // The deleteProfile method in ApiService already clears SharedPreferences and sets authNotifier.value = false
+      context.go('/login'); // Navigate to login after successful deletion
+
+    } catch (e) {
+      debugPrint('Error deleting account: $e');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete account: $_errorMessage')),
+      );
+      // If deletion fails due to session expiry, ensure logout state
+      if (e.toString().contains('Session expired')) {
+        _logout(); // This will clear local state and redirect to login
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,6 +270,16 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                                     'Logout',
                                     style: TextStyle(
                                       color: Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: _deleteAccount,
+                                  child: const Text(
+                                    'Delete Account',
+                                    style: TextStyle(
+                                      color: Colors.red,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -330,6 +406,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                               onClick: _saveAccount,
                               isEnabled: !_isLoading,
                             ),
+                            const SizedBox(height: 10),
                           ],
                         ),
                       ),

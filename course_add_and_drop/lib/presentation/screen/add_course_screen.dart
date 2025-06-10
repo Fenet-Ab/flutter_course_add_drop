@@ -195,25 +195,52 @@ class _AdminCourseManagementScreenState extends State<AdminCourseManagementScree
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.go('/dashboard'),
-                  ),
-                  text.HeadingTextComponent(
-                    text: 'Add Course',
-                    color: AppColors.colorPrimary,
-                  ),
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColors.colorPrimary,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.only(top: 15.0, left: 16.0, right: 16.0, bottom: 0.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => context.go('/dashboard/admin'),
+                        ),
+                        Expanded(
+                          child: const Text(
+                            'Add Course',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Stack(
+                          children: [
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: GestureDetector(
+                      onTap: () {
+                        debugPrint('Navigating to /edit-account');
+                        context.push('/edit-account');
+                      },
+                      child: const CircleAvatar(
+                        backgroundImage: AssetImage('assets/profile.png'),
+                      ),
+                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,

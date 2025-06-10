@@ -39,7 +39,10 @@ class _SelectAcademicYearScreenState extends State<SelectAcademicYearScreen> {
                    children: [
                      IconButton(
                        icon: const Icon(Icons.arrow_back),
-                       onPressed: () => context.pop(),
+                       onPressed: () {
+                         debugPrint('Navigating to /dashboard/user');
+                         context.go('/dashboard/user');
+                       },
                      ),
                      const CircleAvatar(
                        // Profile Image Placeholder

@@ -700,6 +700,41 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> deleteProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      if (token == null) {
+        throw Exception('No token found');
+      }
+
+      debugPrint('Attempting to delete profile with token: $token');
+      final response = await http.delete(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: _getHeaders(token: token),
+      );
+
+      debugPrint('Delete profile response status: ${response.statusCode}');
+      debugPrint('Delete profile response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Clear local data immediately after successful deletion
+        await prefs.clear();
+        authNotifier.value = false; // Update global auth state
+        return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Session expired');
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['error'] ?? 'Failed to delete profile');
+      }
+    } catch (e) {
+      debugPrint('Error deleting profile: $e');
+      rethrow;
+    }
+  }
+
   Map<String, dynamic> _decodeJwt(String token) {
     try {
       final parts = token.split('.');

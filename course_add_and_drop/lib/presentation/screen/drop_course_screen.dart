@@ -327,8 +327,14 @@ class _DropCourseScreenState extends State<DropCourseScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const CircleAvatar(
-                      backgroundImage: AssetImage('assets/profile.png'),
+                    GestureDetector(
+                      onTap: () {
+                        debugPrint('Navigating to /edit-account');
+                        context.push('/edit-account');
+                      },
+                      child: const CircleAvatar(
+                        backgroundImage: AssetImage('assets/profile.png'),
+                      ),
                     ),
                   ],
                 ),

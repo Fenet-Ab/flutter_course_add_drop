@@ -6,6 +6,7 @@ import '../components/button_component.dart' as button;
 import '../components/text_field.dart' as text_field;
 import '../../components/add_drop_component.dart' as add_drop_components;
 import 'package:flutter/foundation.dart';
+import 'package:course_add_and_drop/main.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -114,10 +115,37 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _logout() async {
-    await _apiService.logout();
+    final prefs = await SharedPreferences.getInstance();
+    debugPrint('Clearing local SharedPreferences on logout for admin dashboard.');
+    await prefs.remove('jwt_token');
+    await prefs.remove('user_role');
+    await prefs.remove('user_username');
+    await prefs.remove('user_full_name');
+    await prefs.remove('user_email');
+    await prefs.remove('user_profile_photo');
+
+    authNotifier.value = false;
+    debugPrint('authNotifier set to false via admin_dashboard_screen.dart after local clear.');
+
     if (!mounted) return;
-    debugPrint('Navigating to /login');
-    context.go('/login');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('Navigating to /login via addPostFrameCallback from admin dashboard.');
+      context.go('/login');
+    });
+
+    Future.microtask(() async {
+      try {
+        await _apiService.logout();
+        debugPrint('API Service backend logout completed from admin dashboard.');
+      } catch (e) {
+        debugPrint('Error during API Service backend logout from admin dashboard: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Backend logout failed: ${e.toString().replaceFirst('Exception: ', '')}')),
+          );
+        }
+      }
+    });
   }
 
   @override
@@ -155,25 +183,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     padding: const EdgeInsets.only(top: 15, right: 10),
                   ),
                 ),
-                const Align(
-                  alignment: Alignment.center,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage('assets/profile.png'),
-                  ),
-                ),
                 Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 20),
-                    child: Text(
-                      _adminName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          debugPrint('Navigating to /edit-account from admin dashboard.');
+                          context.push('/edit-account');
+                        },
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: AssetImage('assets/profile.png'),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Welcome, ',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            _isLoading ? 'Loading...' : _adminName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
