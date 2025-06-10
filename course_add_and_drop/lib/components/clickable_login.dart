@@ -13,7 +13,7 @@ class ClickableLoginTextComponent extends StatelessWidget {
         'Sign Up',
         style: TextStyle(
           color: Color(0xFF3B82F6),
-          decoration: TextDecoration.underline,
+         
         ),
       ),
     );

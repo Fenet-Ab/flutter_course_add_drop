@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:course_add_and_drop/theme/app_colors.dart';
 import 'package:course_add_and_drop/components/text.dart' as text;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../components/footer_component.dart';
 
 class DropCourseScreen extends StatefulWidget {
   const DropCourseScreen({super.key});
@@ -300,241 +301,280 @@ class _DropCourseScreenState extends State<DropCourseScreen> {
     }
   }
 
+  void _handleScreenChange(Screen screen) {
+    switch (screen) {
+      case Screen.home:
+        context.go('/home');
+        break;
+      case Screen.addCourse:
+        context.go('/courses/all');
+        break;
+      case Screen.dropCourse:
+        context.go('/drop-course'); // Already on this screen, but keeping for consistency
+        break;
+      case Screen.dashboard:
+        context.go('/dashboard/user');
+        break;
+    }
+  }
+
+  void _handleBackNavigation() {
+    if (_userRole == 'Registrar') {
+      context.go('/dashboard/admin');
+    } else {
+      context.go('/dashboard/user');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint('DropCourseScreen build method - current user role: $_userRole');
     return Scaffold(
-      backgroundColor: const Color(0xFFE0E7FF),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 15.0, left: 16.0, right: 16.0, bottom: 0.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: AppColors.colorGrayBackground,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => context.go('/dashboard/user'),
-                    ),
-                    const Text(
-                      'Drop Course',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        debugPrint('Navigating to /edit-account');
-                        context.push('/edit-account');
-                      },
-                      child: const CircleAvatar(
-                        backgroundImage: AssetImage('assets/profile.png'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search courses...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              onChanged: _filterCourses,
-            ),
-          ),
-          const SizedBox(height: 20),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator())
-          else if (_filteredCourses.isEmpty)
-            Expanded(
-              child: Center(
-                child: text.NormalTextComponent(
-                  text: _searchQuery.isEmpty
-                      ? 'No courses available.'
-                      : 'No courses found matching "$_searchQuery".',
-                  color: AppColors.colorPrimary,
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                itemCount: _filteredCourses.length,
-                itemBuilder: (context, index) {
-                  final course = _filteredCourses[index];
-                  final approvedAddEntry = _approvedStudentAdds.firstWhere(
-                    (add) => add['course_id'] == course['id'],
-                    orElse: () => {},
-                  );
-                  final isDroppable = approvedAddEntry.isNotEmpty &&
-                      approvedAddEntry['approval_status'] == 'approved';
-
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 15.0, left: 16.0, right: 16.0, bottom: 0.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(
-                                child: text.HeadingTextComponent(
-                                  text: course['title'] ?? 'Untitled Course',
-                                  color: AppColors.colorPrimary,
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: _handleBackNavigation,
+                              ),
+                              const Text(
+                                'Drop Course',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: AppColors.colorPrimary),
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedCourse = course;
-                                        _showUpdateDialog = true;
-                                      });
-                                      _showUpdateCourseDialog(course);
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () {
-                                      setState(() {
-                                        _courseToDelete = course;
-                                        _showDeleteDialog = true;
-                                      });
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => AlertDialog(
-                                          title: const Text('Delete Course'),
-                                          content: Text('Are you sure you want to delete ${course['title']}?'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  _showDeleteDialog = false;
-                                                  _courseToDelete = null;
-                                                });
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text('Cancel'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                _deleteCourse(course['id'].toString());
-                                                setState(() {
-                                                  _showDeleteDialog = false;
-                                                  _courseToDelete = null;
-                                                });
-                                                Navigator.pop(context);
-                                              },
-                                              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
+                              GestureDetector(
+                                onTap: () {
+                                  debugPrint('Navigating to /edit-account');
+                                  context.push('/edit-account');
+                                },
+                                child: const CircleAvatar(
+                                  backgroundImage: AssetImage('assets/profile.png'),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          text.NormalTextComponent(
-                            text: course['code'] ?? 'No code available',
-                            color: AppColors.colorPrimary,
-                          ),
-                          const SizedBox(height: 8),
-                          text.NormalTextComponent(
-                            text: course['description'] ?? 'No description available',
-                            color: AppColors.colorPrimary,
-                          ),
-                          const SizedBox(height: 8),
-                          text.NormalTextComponent(
-                            text: 'Credit Hours: ${course['credit_hours'] ?? 'N/A'}',
-                            color: AppColors.colorPrimary,
-                          ),
-                          const SizedBox(height: 8),
-                          if (_userRole != 'Registrar')
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: isDroppable
-                                      ? () => _showDropConfirmationDialog(course, approvedAddEntry)
-                                      : null,
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: AppColors.colorPrimary),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(isDroppable ? 'Request Drop' : 'Not Droppable'),
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 20),
                         ],
                       ),
                     ),
-                  );
-                },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          labelText: 'Search courses...',
+                          prefixIcon: const Icon(Icons.search, color: AppColors.colorPrimary),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _filterCourses('');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: AppColors.colorPrimary),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        onChanged: _filterCourses,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_filteredCourses.isEmpty)
+                      Expanded(
+                        child: Center(
+                          child: text.NormalTextComponent(
+                            text: _searchQuery.isEmpty
+                                ? 'No courses available.'
+                                : 'No courses found matching "$_searchQuery".',
+                            color: AppColors.colorPrimary,
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          itemCount: _filteredCourses.length,
+                          itemBuilder: (context, index) {
+                            final course = _filteredCourses[index];
+                            final approvedAddEntry = _approvedStudentAdds.firstWhere(
+                              (add) => add['course_id'] == course['id'],
+                              orElse: () => {},
+                            );
+                            final isDroppable = approvedAddEntry.isNotEmpty &&
+                                approvedAddEntry['approval_status'] == 'approved';
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: text.HeadingTextComponent(
+                                            text: course['title'] ?? 'Untitled Course',
+                                            color: AppColors.colorPrimary,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: AppColors.colorPrimary),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _selectedCourse = course;
+                                                  _showUpdateDialog = true;
+                                                });
+                                                _showUpdateCourseDialog(course);
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _courseToDelete = course;
+                                                  _showDeleteDialog = true;
+                                                });
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Delete Course'),
+                                                    content: Text('Are you sure you want to delete ${course['title']}?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          setState(() {
+                                                            _showDeleteDialog = false;
+                                                            _courseToDelete = null;
+                                                          });
+                                                          Navigator.pop(context);
+                                                        },
+                                                        child: const Text('Cancel'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () {
+                                                          _deleteCourse(course['id'].toString());
+                                                          setState(() {
+                                                            _showDeleteDialog = false;
+                                                            _courseToDelete = null;
+                                                          });
+                                                          Navigator.pop(context);
+                                                        },
+                                                        child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    text.NormalTextComponent(
+                                      text: course['code'] ?? 'No code available',
+                                      color: AppColors.colorPrimary,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    text.NormalTextComponent(
+                                      text: course['description'] ?? 'No description available',
+                                      color: AppColors.colorPrimary,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    text.NormalTextComponent(
+                                      text: 'Credit Hours: ${course['credit_hours'] ?? 'N/A'}',
+                                      color: AppColors.colorPrimary,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (_userRole != 'Registrar')
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          OutlinedButton(
+                                            onPressed: isDroppable
+                                                ? () => _showDropConfirmationDialog(course, approvedAddEntry)
+                                                : null,
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(color: AppColors.colorPrimary),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            child: Text(isDroppable ? 'Request Drop' : 'Not Droppable'),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        selectedItemColor: const Color(0xFF3B82F6),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Course',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.remove_circle),
-            label: 'Drop Course',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Courses',
-          ),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/dashboard/user');
-              break;
-            case 1:
-              context.go('/add-course');
-              break;
-            case 2:
-              break; // Stay on Drop Course screen
-            case 3:
-              context.go('/all-courses');
-              break;
-          }
-        },
+            FooterComponent(
+              currentScreen: Screen.dropCourse,
+              onItemSelected: (screen) {
+                switch (screen) {
+                  case Screen.home:
+                    context.go('/home');
+                    break;
+                  case Screen.addCourse:
+                    context.go('/courses/all');
+                    break;
+                  case Screen.dropCourse:
+                    context.go('/drop-course');
+                    break;
+                  case Screen.dashboard:
+                    context.go('/dashboard/admin');
+                    break;
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

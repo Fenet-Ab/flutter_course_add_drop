@@ -122,9 +122,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const HeadingTextComponent(value: 'Access'),
+                      const HeadingTextComponent(value: 'Access Account'),
                       const SizedBox(height: 10),
-                      const NormalTextComponent(value: 'Access your course'),
+                      const NormalTextComponent(value: 'Access your course with ease'),
                       const SizedBox(height: 25),
                       TextFieldComponent(
                         controller: _usernameController,

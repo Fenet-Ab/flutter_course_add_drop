@@ -168,7 +168,7 @@ class _MyAppState extends State<MyApp> {
           '/signup',
           '/forgot-password',
           '/terms',
-          '/home',
+          // '/home', // Removed /home from isAuthPage to allow logged-in users to access it
         ].contains(targetPath);
 
         debugPrint('GoRouter Redirect: Current Path: $targetPath');
@@ -179,7 +179,7 @@ class _MyAppState extends State<MyApp> {
         // Scenario 1: User is NOT logged in
         if (!loggedIn) {
           // If trying to access a protected page (anything not auth or loading), redirect to home
-          if (!isAuthPage && targetPath != '/loading') {
+          if (!isAuthPage && targetPath != '/loading' && targetPath != '/home') { // Added targetPath != '/home'
             debugPrint('GoRouter Redirect: Not logged in and accessing protected page, redirecting to /home');
             return '/home';
           }
@@ -195,35 +195,20 @@ class _MyAppState extends State<MyApp> {
 
         // Scenario 2: User IS logged in (loggedIn is true at this point)
 
-        // If logged in and trying to access an auth page (login/signup/home etc.), redirect to home dashboard
-        if (isAuthPage) {
+        // If logged in and trying to access an auth page (login/signup etc., but NOT /home now), redirect to home dashboard
+        if (isAuthPage && targetPath != '/home') { // Added targetPath != '/home' here as well
           String homeRoute = (role == 'Registrar') ? '/dashboard/admin' : '/dashboard/user';
-          debugPrint('GoRouter Redirect: Logged in and accessing auth page, redirecting to $homeRoute');
-          return homeRoute;
+          debugPrint('GoRouter Redirect: Logged in and on auth page ($targetPath), redirecting to home dashboard: $homeRoute');
+          return homeRoute; // Redirect to user's dashboard
         }
 
-        // If logged in and on /loading, redirect to home dashboard
-        if (targetPath == '/loading') {
-          String homeRoute = (role == 'Registrar') ? '/dashboard/admin' : '/dashboard/user';
-          debugPrint('GoRouter Redirect: Logged in and on /loading, redirecting to $homeRoute');
-          return homeRoute;
+        // If logged in and trying to access /home, allow it.
+        if (loggedIn && targetPath == '/home') {
+          debugPrint('GoRouter Redirect: Logged in and accessing /home, allowing access.');
+          return null;
         }
 
-        // For dashboard routes, verify the role matches (only if loggedIn is true)
-        if (targetPath.startsWith('/dashboard/')) {
-          final isAdminRoute = targetPath == '/dashboard/admin';
-          final isAdminRole = role == 'Registrar';
-          
-          if ((isAdminRoute && !isAdminRole) || (!isAdminRoute && isAdminRole)) {
-            String correctRoute = isAdminRole ? '/dashboard/admin' : '/dashboard/user';
-            debugPrint('GoRouter Redirect: Role mismatch, redirecting to correct route: $correctRoute');
-            return correctRoute;
-          }
-        }
-
-        // No redirect needed, proceed to the target path (if it's a protected route and role matches, or another valid route)
-        debugPrint('GoRouter Redirect: Logged in, no redirect needed, proceeding to $targetPath');
-        return null;
+        return null; // No redirect needed
       },
       errorBuilder: (context, state) => Scaffold(
         body: Center(child: Text('Route not found: ${state.uri}')),

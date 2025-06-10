@@ -47,14 +47,18 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+  mockito: ^5.4.4
+  mocktail: ^1.0.3
+  build_runner: ^2.4.8
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
-  build_runner: ^2.3.3
+  flutter_lints: ^3.0.1
   freezed: ^2.2.0
   json_serializable: ^6.7.1
 
@@ -71,6 +75,11 @@ flutter:
     - assets/password.png
     - assets/upload.png
     - assets/logo.png
+    - assets/title.png
+    - assets/description.png
+    - assets/credit.png
+    - assets/code.png
+    
 
   # To add assets to your application, add an assets section, like this:
   # assets:

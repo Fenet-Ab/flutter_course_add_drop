@@ -34,8 +34,8 @@ class TextFieldComponent extends StatelessWidget {
           labelText: label,
           prefixIcon: Image.asset(
             assetPath,
-            width: 20,
-            height: 20,
+            width: 15,
+            height: 15,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),

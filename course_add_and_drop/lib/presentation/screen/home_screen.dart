@@ -33,9 +33,10 @@ class HomeScreen extends StatelessWidget {
           Add and Drop Manager App''',
                     textAlign: TextAlign.center,
                     style: TextStyle(
+                      
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.colorText, // Dark purple text
+                      color: Color.fromARGB(255, 19, 91, 208), // Dark purple text
                     ),
                   ),
                   const SizedBox(height: 16),

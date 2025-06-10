@@ -12,8 +12,7 @@ part of 'signup_request.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-  'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
-);
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 SignupRequest _$SignupRequestFromJson(Map<String, dynamic> json) {
   return _SignupRequest.fromJson(json);
@@ -43,19 +42,17 @@ mixin _$SignupRequest {
 /// @nodoc
 abstract class $SignupRequestCopyWith<$Res> {
   factory $SignupRequestCopyWith(
-    SignupRequest value,
-    $Res Function(SignupRequest) then,
-  ) = _$SignupRequestCopyWithImpl<$Res, SignupRequest>;
+          SignupRequest value, $Res Function(SignupRequest) then) =
+      _$SignupRequestCopyWithImpl<$Res, SignupRequest>;
   @useResult
-  $Res call({
-    int id,
-    @JsonKey(name: 'full_name') String fullName,
-    String username,
-    String email,
-    String password,
-    String role,
-    String? profilePhoto,
-  });
+  $Res call(
+      {int id,
+      @JsonKey(name: 'full_name') String fullName,
+      String username,
+      String email,
+      String password,
+      String role,
+      String? profilePhoto});
 }
 
 /// @nodoc
@@ -81,39 +78,36 @@ class _$SignupRequestCopyWithImpl<$Res, $Val extends SignupRequest>
     Object? role = null,
     Object? profilePhoto = freezed,
   }) {
-    return _then(
-      _value.copyWith(
-            id: null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
-                      as int,
-            fullName: null == fullName
-                ? _value.fullName
-                : fullName // ignore: cast_nullable_to_non_nullable
-                      as String,
-            username: null == username
-                ? _value.username
-                : username // ignore: cast_nullable_to_non_nullable
-                      as String,
-            email: null == email
-                ? _value.email
-                : email // ignore: cast_nullable_to_non_nullable
-                      as String,
-            password: null == password
-                ? _value.password
-                : password // ignore: cast_nullable_to_non_nullable
-                      as String,
-            role: null == role
-                ? _value.role
-                : role // ignore: cast_nullable_to_non_nullable
-                      as String,
-            profilePhoto: freezed == profilePhoto
-                ? _value.profilePhoto
-                : profilePhoto // ignore: cast_nullable_to_non_nullable
-                      as String?,
-          )
-          as $Val,
-    );
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int,
+      fullName: null == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
+              as String,
+      username: null == username
+          ? _value.username
+          : username // ignore: cast_nullable_to_non_nullable
+              as String,
+      email: null == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String,
+      password: null == password
+          ? _value.password
+          : password // ignore: cast_nullable_to_non_nullable
+              as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as String,
+      profilePhoto: freezed == profilePhoto
+          ? _value.profilePhoto
+          : profilePhoto // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ) as $Val);
   }
 }
 
@@ -121,20 +115,18 @@ class _$SignupRequestCopyWithImpl<$Res, $Val extends SignupRequest>
 abstract class _$$SignupRequestImplCopyWith<$Res>
     implements $SignupRequestCopyWith<$Res> {
   factory _$$SignupRequestImplCopyWith(
-    _$SignupRequestImpl value,
-    $Res Function(_$SignupRequestImpl) then,
-  ) = __$$SignupRequestImplCopyWithImpl<$Res>;
+          _$SignupRequestImpl value, $Res Function(_$SignupRequestImpl) then) =
+      __$$SignupRequestImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({
-    int id,
-    @JsonKey(name: 'full_name') String fullName,
-    String username,
-    String email,
-    String password,
-    String role,
-    String? profilePhoto,
-  });
+  $Res call(
+      {int id,
+      @JsonKey(name: 'full_name') String fullName,
+      String username,
+      String email,
+      String password,
+      String role,
+      String? profilePhoto});
 }
 
 /// @nodoc
@@ -142,9 +134,8 @@ class __$$SignupRequestImplCopyWithImpl<$Res>
     extends _$SignupRequestCopyWithImpl<$Res, _$SignupRequestImpl>
     implements _$$SignupRequestImplCopyWith<$Res> {
   __$$SignupRequestImplCopyWithImpl(
-    _$SignupRequestImpl _value,
-    $Res Function(_$SignupRequestImpl) _then,
-  ) : super(_value, _then);
+      _$SignupRequestImpl _value, $Res Function(_$SignupRequestImpl) _then)
+      : super(_value, _then);
 
   /// Create a copy of SignupRequest
   /// with the given fields replaced by the non-null parameter values.
@@ -159,53 +150,50 @@ class __$$SignupRequestImplCopyWithImpl<$Res>
     Object? role = null,
     Object? profilePhoto = freezed,
   }) {
-    return _then(
-      _$SignupRequestImpl(
-        id: null == id
-            ? _value.id
-            : id // ignore: cast_nullable_to_non_nullable
-                  as int,
-        fullName: null == fullName
-            ? _value.fullName
-            : fullName // ignore: cast_nullable_to_non_nullable
-                  as String,
-        username: null == username
-            ? _value.username
-            : username // ignore: cast_nullable_to_non_nullable
-                  as String,
-        email: null == email
-            ? _value.email
-            : email // ignore: cast_nullable_to_non_nullable
-                  as String,
-        password: null == password
-            ? _value.password
-            : password // ignore: cast_nullable_to_non_nullable
-                  as String,
-        role: null == role
-            ? _value.role
-            : role // ignore: cast_nullable_to_non_nullable
-                  as String,
-        profilePhoto: freezed == profilePhoto
-            ? _value.profilePhoto
-            : profilePhoto // ignore: cast_nullable_to_non_nullable
-                  as String?,
-      ),
-    );
+    return _then(_$SignupRequestImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as int,
+      fullName: null == fullName
+          ? _value.fullName
+          : fullName // ignore: cast_nullable_to_non_nullable
+              as String,
+      username: null == username
+          ? _value.username
+          : username // ignore: cast_nullable_to_non_nullable
+              as String,
+      email: null == email
+          ? _value.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String,
+      password: null == password
+          ? _value.password
+          : password // ignore: cast_nullable_to_non_nullable
+              as String,
+      role: null == role
+          ? _value.role
+          : role // ignore: cast_nullable_to_non_nullable
+              as String,
+      profilePhoto: freezed == profilePhoto
+          ? _value.profilePhoto
+          : profilePhoto // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
 class _$SignupRequestImpl implements _SignupRequest {
-  const _$SignupRequestImpl({
-    required this.id,
-    @JsonKey(name: 'full_name') required this.fullName,
-    required this.username,
-    required this.email,
-    required this.password,
-    this.role = 'Student',
-    this.profilePhoto,
-  });
+  const _$SignupRequestImpl(
+      {required this.id,
+      @JsonKey(name: 'full_name') required this.fullName,
+      required this.username,
+      required this.email,
+      required this.password,
+      this.role = 'Student',
+      this.profilePhoto});
 
   factory _$SignupRequestImpl.fromJson(Map<String, dynamic> json) =>
       _$$SignupRequestImplFromJson(json);
@@ -253,15 +241,7 @@ class _$SignupRequestImpl implements _SignupRequest {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-    runtimeType,
-    id,
-    fullName,
-    username,
-    email,
-    password,
-    role,
-    profilePhoto,
-  );
+      runtimeType, id, fullName, username, email, password, role, profilePhoto);
 
   /// Create a copy of SignupRequest
   /// with the given fields replaced by the non-null parameter values.
@@ -273,20 +253,21 @@ class _$SignupRequestImpl implements _SignupRequest {
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$SignupRequestImplToJson(this);
+    return _$$SignupRequestImplToJson(
+      this,
+    );
   }
 }
 
 abstract class _SignupRequest implements SignupRequest {
-  const factory _SignupRequest({
-    required final int id,
-    @JsonKey(name: 'full_name') required final String fullName,
-    required final String username,
-    required final String email,
-    required final String password,
-    final String role,
-    final String? profilePhoto,
-  }) = _$SignupRequestImpl;
+  const factory _SignupRequest(
+      {required final int id,
+      @JsonKey(name: 'full_name') required final String fullName,
+      required final String username,
+      required final String email,
+      required final String password,
+      final String role,
+      final String? profilePhoto}) = _$SignupRequestImpl;
 
   factory _SignupRequest.fromJson(Map<String, dynamic> json) =
       _$SignupRequestImpl.fromJson;

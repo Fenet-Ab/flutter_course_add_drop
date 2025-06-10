@@ -18,7 +18,7 @@ class HeadingTextComponent extends StatelessWidget {
         style: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.normal,
-          color: Colors.blue, // Assuming colorHeading is blue
+          color: Color.fromARGB(255, 12, 95, 163), // Assuming colorHeading is blue
         ),
         textAlign: TextAlign.center,
       ),
@@ -144,7 +144,17 @@ class TextFieldComponent extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.grey),
-          prefixIcon: Image.asset(assetPath, width: 24, height: 24),
+          prefixIcon: Image.asset(
+            assetPath,
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Error loading asset $assetPath: $error');
+              return const Icon(Icons.image, size: 24, color: Colors.grey);
+            },
+            cacheWidth: 48, // 24 * 2 for retina displays
+            cacheHeight: 48,
+          ),
           focusedBorder: const OutlineInputBorder(
             borderSide: BorderSide(color: Colors.blue),
           ),

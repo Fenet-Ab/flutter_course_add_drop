@@ -7,6 +7,7 @@ import '../components/text_field.dart' as text_field;
 import '../../components/add_drop_component.dart' as add_drop_components;
 import 'package:flutter/foundation.dart';
 import 'package:course_add_and_drop/main.dart';
+import '../../components/footer_component.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -27,11 +28,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _adds = [];
   String _adminName = '';
+  String? _userRole;
+  String? _userName;
 
   @override
   void initState() {
     super.initState();
+    debugPrint('Asset paths being used:');
+    debugPrint('title.png: assets/title.png');
+    debugPrint('code.png: assets/code.png');
+    debugPrint('description.png: assets/description.png');
+    debugPrint('credit.png: assets/credit.png');
     _loadData();
+    _loadUserRole();
+    _loadUserName();
   }
 
   Future<void> _loadData() async {
@@ -59,6 +69,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userRole = prefs.getString('user_role');
+    });
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name');
+    });
   }
 
   Future<void> _createCourse() async {
@@ -148,6 +172,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
+  void _handleScreenChange(Screen screen) {
+    debugPrint('Handling screen change in admin dashboard: $screen');
+    switch (screen) {
+      case Screen.home:
+        context.go('/home');
+        break;
+      case Screen.addCourse:
+        context.go('/courses/all');
+        break;
+      case Screen.dropCourse:
+        context.go('/drop-course');
+        break;
+      case Screen.dashboard:
+        debugPrint('Navigating to admin dashboard');
+        if (mounted) {
+          context.go('/dashboard/admin');
+        }
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading || _token == null) {
@@ -209,8 +254,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               fontSize: 16,
                             ),
                           ),
-                          Text(
-                            _isLoading ? 'Loading...' : _adminName,
+                           Text(
+                            _isLoading ? 'Loading...' : (_userName ?? 'Admin'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -227,34 +272,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           Expanded(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
                 children: [
                   const SizedBox(height: 50),
                   add_drop_components.TextFieldComponent(
                     controller: _titleController,
                     label: 'Title',
-                    assetPath: 'assets/profile.png',
+                    assetPath: 'assets/title.png',
                     validator: (value) => value!.isEmpty ? 'Enter title' : null,
                     onValueChange: (value) {},
                   ),
+                  const SizedBox(height: 16),
                   add_drop_components.TextFieldComponent(
                     controller: _codeController,
                     label: 'Code',
-                    assetPath: 'assets/profile.png',
+                    assetPath: 'assets/code.png',
                     validator: (value) => value!.isEmpty ? 'Enter code' : null,
                     onValueChange: (value) {},
                   ),
+                  const SizedBox(height: 16),
                   add_drop_components.TextFieldComponent(
                     controller: _descriptionController,
                     label: 'Description',
-                    assetPath: 'assets/profile.png',
+                    assetPath: 'assets/description.png',
                     validator: (value) => value!.isEmpty ? 'Enter description' : null,
                     onValueChange: (value) {},
                   ),
+                  const SizedBox(height: 16),
                   add_drop_components.TextFieldComponent(
                     controller: _creditHoursController,
                     label: 'Credit Hours',
-                    assetPath: 'assets/profile.png',
+                    assetPath: 'assets/credit.png',
                     validator: (value) => value!.isEmpty ? 'Enter credit hours' : null,
                     onValueChange: (value) {},
                   ),
@@ -275,35 +324,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: Text(_errorMessage, style: const TextStyle(color: Colors.red)),
                     ),
                   const SizedBox(height: 20),
-                 
-                  const SizedBox(height: 20),
-                  
                 ],
               ),
             ),
           ),
-          // Footer
-          BottomNavigationBar(
-            backgroundColor: const Color(0xFF3B82F6),
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white70,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list),
-                label: 'Courses',
-              ),
-            ],
-            onTap: (index) {
-              if (index == 0) {
-                context.go('/dashboard/admin');
-              } else {
-                context.go('/courses/all');
-              }
-            },
+          FooterComponent(
+            currentScreen: Screen.dashboard,
+            onItemSelected: _handleScreenChange,
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import '../../components/add_drop_component.dart' as add_drop_components; // Imp
 import '../components/button_component.dart' as button; // Import the aliased ButtonComponent
 import 'package:course_add_and_drop/main.dart'; // Import main.dart to access global authNotifier
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../components/footer_component.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -110,6 +111,65 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       debugPrint('Navigating to /login via addPostFrameCallback after authNotifier update.');
       context.go('/login');
     });
+  }
+
+  Future<void> _deleteAdd(int addId) async {
+    try {
+      await _apiService.deleteAdd(addId.toString());
+      await _fetchData(); // Refresh the data after deletion
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add request deleted successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting add request: $e')),
+      );
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(int addId) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Add Request'),
+          content: const Text('Are you sure you want to delete this add request?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      await _deleteAdd(addId);
+    }
+  }
+
+  void _handleScreenChange(Screen screen) {
+    switch (screen) {
+      case Screen.home:
+        context.go('/home');
+        break;
+      case Screen.addCourse:
+        context.go('/courses/all');
+        break;
+      case Screen.dropCourse:
+        context.go('/drop-course');
+        break;
+      case Screen.dashboard:
+        context.go('/dashboard/user');
+        break;
+    }
   }
 
   @override
@@ -274,14 +334,24 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                                                 ),
                                               if (_currentHeaderSet == 0)
                                                 Expanded(
-                                                  child: Text(
-                                                    status,
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      color: status == 'APPROVED' ? Colors.green : 
-                                                             status == 'PENDING' ? Colors.orange : 
-                                                             status == 'REJECTED' ? Colors.red : Colors.black,
-                                                    ),
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Text(
+                                                        status,
+                                                        textAlign: TextAlign.center,
+                                                        style: TextStyle(
+                                                          color: status == 'APPROVED' ? Colors.green : 
+                                                                 status == 'PENDING' ? Colors.orange : 
+                                                                 status == 'REJECTED' ? Colors.red : Colors.black,
+                                                        ),
+                                                      ),
+                                                      if (status == 'PENDING')
+                                                        IconButton(
+                                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                                          onPressed: () => _showDeleteConfirmationDialog(add['id']),
+                                                        ),
+                                                    ],
                                                   ),
                                                 )
                                               else
@@ -340,27 +410,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
           ),
           // Footer
-          BottomNavigationBar(
-            backgroundColor: const Color(0xFF3B82F6),
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white70,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list),
-                label: 'Courses',
-              ),
-            ],
-            onTap: (index) {
-              if (index == 0) {
-                context.go('/dashboard/user');
-              } else {
-                context.go('/courses/all');
-              }
-            },
+          FooterComponent(
+            currentScreen: Screen.dashboard,
+            onItemSelected: _handleScreenChange,
           ),
         ],
       ),

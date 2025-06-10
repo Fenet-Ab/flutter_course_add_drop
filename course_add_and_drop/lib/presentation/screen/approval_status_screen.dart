@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:course_add_and_drop/theme/app_colors.dart';
 import 'package:course_add_and_drop/components/text.dart' as text;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApprovalStatusScreen extends StatefulWidget {
   const ApprovalStatusScreen({super.key});
@@ -21,11 +22,28 @@ class _ApprovalStatusScreenState extends State<ApprovalStatusScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredRequests = [];
   String _selectedTab = 'Add Requests';
+  String? _userRole;
 
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _loadRequests();
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userRole = prefs.getString('user_role');
+    });
+  }
+
+  void _handleBackNavigation() {
+    if (_userRole == 'Registrar') {
+      context.go('/dashboard/admin');
+    } else {
+      context.go('/dashboard/user');
+    }
   }
 
   Future<void> _loadRequests() async {
@@ -150,7 +168,7 @@ class _ApprovalStatusScreenState extends State<ApprovalStatusScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
-                      onPressed: () => context.go('/dashboard/user'),
+                      onPressed: _handleBackNavigation,
                     ),
                     const Text(
                       'Approval Status',

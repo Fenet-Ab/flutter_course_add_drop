@@ -735,6 +735,27 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> deleteAdd(String addId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+      if (token == null) throw Exception('No token found');
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/adds/$addId'),
+        headers: _getHeaders(token: token),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(json.decode(response.body)['error'] ?? 'Failed to delete add request');
+      }
+    } catch (e) {
+      throw Exception('Failed to delete add request: $e');
+    }
+  }
+
   Map<String, dynamic> _decodeJwt(String token) {
     try {
       final parts = token.split('.');
