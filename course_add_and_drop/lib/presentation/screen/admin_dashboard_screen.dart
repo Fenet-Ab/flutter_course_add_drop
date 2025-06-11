@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
@@ -8,28 +9,20 @@ import '../../components/add_drop_component.dart' as add_drop_components;
 import 'package:flutter/foundation.dart';
 import 'package:course_add_and_drop/main.dart';
 import '../../components/footer_component.dart';
+import '../providers/admin_dashboard_provider.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  _AdminDashboardScreenState createState() => _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   final _titleController = TextEditingController();
   final _codeController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _creditHoursController = TextEditingController();
-  final ApiService _apiService = ApiService();
-  String? _token;
-  String _successMessage = '';
-  String _errorMessage = '';
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _adds = [];
-  String _adminName = '';
-  String? _userRole;
-  String? _userName;
 
   @override
   void initState() {
@@ -39,49 +32,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     debugPrint('code.png: assets/code.png');
     debugPrint('description.png: assets/description.png');
     debugPrint('credit.png: assets/credit.png');
-    _loadData();
-    _loadUserRole();
-    _loadUserName();
-  }
-
-  Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    try {
-      final token = prefs.getString('jwt_token');
-      if (token != null) {
-        final user = await _apiService.getUserProfile();
-        if (!mounted) return;
-        setState(() {
-          _adminName = user.fullName;
-        });
-      }
-      final adds = await _apiService.getAdds();
-      if (!mounted) return;
-      setState(() {
-        _token = token;
-        _adds = adds;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userRole = prefs.getString('user_role');
-    });
-  }
-
-  Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('user_name');
+    
+    // Load data using Riverpod
+    Future.microtask(() {
+      ref.read(adminDashboardProvider.notifier).loadData();
+      ref.read(adminDashboardProvider.notifier).loadUserRole();
+      ref.read(adminDashboardProvider.notifier).loadUserName();
     });
   }
 
@@ -90,52 +46,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _codeController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
         _creditHoursController.text.isEmpty) {
-      setState(() {
-        _errorMessage = 'All fields are required';
-        _successMessage = '';
-      });
       return;
     }
 
-    try {
-      final response = await _apiService.createCourse(
-        title: _titleController.text,
-        code: _codeController.text,
-        description: _descriptionController.text,
-        creditHours: _creditHoursController.text,
-      );
-      if (!mounted) return;
-      setState(() {
-        _successMessage = response['message'] ?? 'Course created successfully';
-        _errorMessage = '';
-        _titleController.clear();
-        _codeController.clear();
-        _descriptionController.clear();
-        _creditHoursController.clear();
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
-        _successMessage = '';
-      });
-    }
-  }
+    await ref.read(adminDashboardProvider.notifier).createCourse(
+      title: _titleController.text,
+      code: _codeController.text,
+      description: _descriptionController.text,
+      creditHours: _creditHoursController.text,
+    );
 
-  Future<void> _approveAdd(int addId, String status) async {
-    try {
-      await _apiService.approveAdd(addId, status);
-      if (!mounted) return;
-      _loadData();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Add $status')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    }
+    // Clear controllers after successful creation
+    _titleController.clear();
+    _codeController.clear();
+    _descriptionController.clear();
+    _creditHoursController.clear();
   }
 
   Future<void> _logout() async {
@@ -159,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     Future.microtask(() async {
       try {
-        await _apiService.logout();
+        await ref.read(apiServiceProvider).logout();
         debugPrint('API Service backend logout completed from admin dashboard.');
       } catch (e) {
         debugPrint('Error during API Service backend logout from admin dashboard: $e');
@@ -195,7 +120,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _token == null) {
+    final state = ref.watch(adminDashboardProvider);
+
+    if (state.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -254,8 +181,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               fontSize: 16,
                             ),
                           ),
-                           Text(
-                            _isLoading ? 'Loading...' : (_userName ?? 'Admin'),
+                          Text(
+                            state.userName ?? 'Admin',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -313,15 +240,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     onClick: _createCourse,
                     enabled: true,
                   ),
-                  if (_successMessage.isNotEmpty)
+                  if (state.successMessage.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(_successMessage, style: const TextStyle(color: Colors.green)),
+                      child: Text(state.successMessage, style: const TextStyle(color: Colors.green)),
                     ),
-                  if (_errorMessage.isNotEmpty)
+                  if (state.errorMessage.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(_errorMessage, style: const TextStyle(color: Colors.red)),
+                      child: Text(state.errorMessage, style: const TextStyle(color: Colors.red)),
                     ),
                   const SizedBox(height: 20),
                 ],

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:course_add_and_drop/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:course_add_and_drop/theme/app_colors.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -109,6 +110,76 @@ void main() {
 
       // Verify error message
       expect(find.text('Error:'), findsOneWidget);
+    });
+
+    testWidgets('Admin dashboard test', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Login as admin
+      await tester.tap(find.text('Get Started'));
+      await tester.pumpAndSettle();
+      
+      await tester.enterText(find.byType(TextFormField).first, 'admin@example.com');
+      await tester.enterText(find.byType(TextFormField).last, 'admin123');
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      // Verify admin dashboard
+      expect(find.text('Welcome,'), findsOneWidget);
+      
+      // Test course creation
+      await tester.enterText(find.byType(TextFormField).at(0), 'Test Course');
+      await tester.enterText(find.byType(TextFormField).at(1), 'TEST101');
+      await tester.enterText(find.byType(TextFormField).at(2), 'Test Description');
+      await tester.enterText(find.byType(TextFormField).at(3), '3');
+      
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // Verify success message
+      expect(find.text('Course created successfully'), findsOneWidget);
+    });
+
+    testWidgets('Course drop test', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Login as student
+      await tester.tap(find.text('Get Started'));
+      await tester.pumpAndSettle();
+      
+      await tester.enterText(find.byType(TextFormField).first, 'student@example.com');
+      await tester.enterText(find.byType(TextFormField).last, 'student123');
+      await tester.tap(find.text('Log In'));
+      await tester.pumpAndSettle();
+
+      // Navigate to drop course screen
+      await tester.tap(find.byIcon(Icons.remove_circle_outline));
+      await tester.pumpAndSettle();
+
+      // Verify drop course screen
+      expect(find.text('Drop Course'), findsOneWidget);
+
+      // Test course drop
+      await tester.tap(find.text('Request Drop'));
+      await tester.pumpAndSettle();
+
+      // Verify confirmation dialog
+      expect(find.text('Request Drop Course'), findsOneWidget);
+      await tester.tap(find.text('Request Drop'));
+      await tester.pumpAndSettle();
+
+      // Verify success message
+      expect(find.text('Drop request submitted successfully'), findsOneWidget);
+    });
+
+    testWidgets('App should start and show initial screen', (WidgetTester tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Verify that the app starts successfully
+      expect(find.byType(MaterialApp), findsOneWidget);
     });
   });
 } 
